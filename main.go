@@ -29,7 +29,7 @@ func main() {
 			command, ok := registryCommands[words[0]]
 			// if command is valid execute it
 			if ok == true {
-				err := command.callback(&confi)
+				err := command.callback(&confi, words[1:]...)
 				if err != nil {
 					fmt.Printf("Error Command: %v\n", err)
 				}
@@ -64,6 +64,11 @@ func init() {
 			description: "displays the names of previous 20 location areas in the Pokemon world",
 			callback:    commandMapBack,
 		},
+		"explore": {
+			name:        "explore",
+			description: "displays all pokemons found in the location specified",
+			callback:    commandExplore,
+		},
 	}
 }
 
@@ -77,7 +82,7 @@ var registryCommands map[string]cliCommand
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(cfg *Config) error
+	callback    func(cfg *Config, args ...string) error
 }
 
 // struct for pagination
@@ -94,13 +99,13 @@ func cleanInput(txt string) []string {
 }
 
 // used as callback functions
-func commandExit(cfg *Config) error {
+func commandExit(cfg *Config, args ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *Config) error {
+func commandHelp(cfg *Config, args ...string) error {
 	fmt.Println("Welcome to the Pokedex!\nUsage Commands")
 	fmt.Println("------------------------")
 	for _, command := range registryCommands {
@@ -109,7 +114,7 @@ func commandHelp(cfg *Config) error {
 	return nil
 }
 
-func commandMap(cfg *Config) error {
+func commandMap(cfg *Config, args ...string) error {
 	url := "https://pokeapi.co/api/v2/location-area/"
 
 	// check if config.next exists for pagination url
@@ -121,7 +126,7 @@ func commandMap(cfg *Config) error {
 	var locations utils.LocationResponse
 
 	// use pokeAPI
-	locations, err := utils.GetMapPokeAPI(url, cache)
+	err := utils.GetMapPokeAPI(url, cache, &locations)
 	if err != nil {
 		return err
 	}
@@ -136,7 +141,7 @@ func commandMap(cfg *Config) error {
 	return nil
 }
 
-func commandMapBack(cfg *Config) error {
+func commandMapBack(cfg *Config, args ...string) error {
 	url := "https://pokeapi.co/api/v2/location-area/"
 
 	// check if config.Previous exists for pagination url
@@ -148,7 +153,7 @@ func commandMapBack(cfg *Config) error {
 	var locations utils.LocationResponse
 
 	// use pokeAPI
-	locations, err := utils.GetMapPokeAPI(url, cache)
+	err := utils.GetMapPokeAPI(url, cache, &locations)
 	if err != nil {
 		return err
 	}
@@ -159,6 +164,32 @@ func commandMapBack(cfg *Config) error {
 	// print all 20 locations
 	for _, area := range locations.Results {
 		fmt.Printf("%s\n", area.Name)
+	}
+
+	return nil
+}
+
+func commandExplore(cfg *Config, args ...string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("did not pass Location to explore: %v", args)
+	}
+
+	fmt.Printf("Exploring ...%s\n", args[0])
+
+	// get location url
+	url := "https://pokeapi.co/api/v2/location-area/" + args[0]
+
+	var searched utils.LocationSearched
+
+	err := utils.GetPokemonsOfLocation(url, cache, &searched)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Pokemons Found")
+	fmt.Println("------------------------")
+	for _, val := range searched.Pokemons_found {
+		fmt.Printf("- %s\n", val.Pokemon.Name)
 	}
 
 	return nil

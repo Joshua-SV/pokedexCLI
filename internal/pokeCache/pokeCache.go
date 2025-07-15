@@ -12,7 +12,7 @@ type cacheType interface {
 	reapLoop()
 }
 
-// Cache provides thread-safe access to a timed cache
+// Cache provides thread-safe access with mutex
 type Cache struct {
 	table    map[string]cacheEntry
 	mu       sync.Mutex
@@ -67,8 +67,8 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	}
 
 	// Update access time (sliding expiration) Least Resently Used (LRU) policy
-	entry.createdAt = time.Now()
-	c.table[key] = entry
+	// entry.createdAt = time.Now()
+	// c.table[key] = entry
 
 	fmt.Println("Successful Cache Hit!!!")
 	return entry.val, true

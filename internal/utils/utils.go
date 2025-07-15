@@ -21,7 +21,53 @@ type Area struct {
 	URL  string `json:"url"`
 }
 
-func GetMapPokeAPI(url string, cache *pokeCache.Cache) (LocationResponse, error) {
+type LocationSearched struct {
+	Name           string      `json:"name"`
+	ID             int         `json:"id"`
+	Pokemons_found []Encounter `json:"pokemon_encounters"`
+}
+
+type Encounter struct {
+	Pokemon Pokemon `json:"pokemon"`
+}
+
+type Pokemon struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+func GetMapPokeAPI(url string, cache *pokeCache.Cache, locations *LocationResponse) error {
+	body, err := GetBody(url, cache)
+	if err != nil {
+		return err
+	}
+
+	// parse the json into the locations struct
+	err = json.Unmarshal(body, &locations)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetPokemonsOfLocation(url string, cache *pokeCache.Cache, search *LocationSearched) error {
+	body, err := GetBody(url, cache)
+	if err != nil {
+		return err
+	}
+
+	// parse the json into the locations struct
+	err = json.Unmarshal(body, &search)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// get the cached body or https the body
+func GetBody(url string, cache *pokeCache.Cache) ([]byte, error) {
 	body, okay := cache.Get(url)
 
 	// if cache does not have the data fetch from https
@@ -29,26 +75,19 @@ func GetMapPokeAPI(url string, cache *pokeCache.Cache) (LocationResponse, error)
 		// get https request and response
 		res, err := http.Get(url)
 		if err != nil {
-			return LocationResponse{}, err
+			return nil, err
 		}
 
 		defer res.Body.Close()
 
 		body, err = io.ReadAll(res.Body)
 		if err != nil {
-			return LocationResponse{}, err
+			return nil, err
 		}
-
-		// add the []byte data into the cache
-		cache.Add(url, body)
 	}
 
-	// parse the json into the locations struct
-	var locations LocationResponse
-	err := json.Unmarshal(body, &locations)
-	if err != nil {
-		return LocationResponse{}, err
-	}
+	// add the []byte data into the cache
+	cache.Add(url, body)
 
-	return locations, nil
+	return body, nil
 }
