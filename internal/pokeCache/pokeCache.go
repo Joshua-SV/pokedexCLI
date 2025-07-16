@@ -1,7 +1,6 @@
 package pokeCache
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -56,7 +55,6 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 
 	entry, okay := c.table[key]
 	if okay == false {
-		fmt.Println("Failed Cache Hit!!!")
 		return nil, false
 	}
 
@@ -69,8 +67,6 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	// Update access time (sliding expiration) Least Resently Used (LRU) policy
 	// entry.createdAt = time.Now()
 	// c.table[key] = entry
-
-	fmt.Println("Successful Cache Hit!!!")
 	return entry.val, true
 }
 

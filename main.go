@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func main() {
 					fmt.Printf("Error Command: %v\n", err)
 				}
 			} else {
-				fmt.Println("Unknown command")
+				fmt.Printf("Unknown command: %s\n", words[0])
 			}
 		}
 	}
@@ -69,14 +70,24 @@ func init() {
 			description: "displays all pokemons found in the location specified",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Catching Pokemon adds them to the user's Pokedex",
+			callback:    commandCatch,
+		},
 	}
+	// initialize an empty pokedex
+	pokedex = make(map[string]utils.PokemonFull)
 }
 
-// create cache to use during program
+// global create cache to use during program
 var cache = pokeCache.NewCache(12 * time.Second)
 
-// hash table for access of commands
+// global hash table for access of commands
 var registryCommands map[string]cliCommand
+
+// global hashtable for pokedex of captured Pokemons by the user
+var pokedex map[string]utils.PokemonFull
 
 // struct for managing commands
 type cliCommand struct {
@@ -171,7 +182,7 @@ func commandMapBack(cfg *Config, args ...string) error {
 
 func commandExplore(cfg *Config, args ...string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("did not pass Location to explore: %v", args)
+		return fmt.Errorf("did not pass Location to explore: %v\n", args)
 	}
 
 	fmt.Printf("Exploring ...%s\n", args[0])
@@ -183,7 +194,7 @@ func commandExplore(cfg *Config, args ...string) error {
 
 	err := utils.GetPokemonsOfLocation(url, cache, &searched)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid location name: %v\n", err)
 	}
 
 	fmt.Println("Pokemons Found")
@@ -191,6 +202,42 @@ func commandExplore(cfg *Config, args ...string) error {
 	for _, val := range searched.Pokemons_found {
 		fmt.Printf("- %s\n", val.Pokemon.Name)
 	}
+
+	return nil
+}
+
+func commandCatch(cfg *Config, args ...string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("did not pass pokemon to catch: %v\n", args)
+	}
+
+	url := "https://pokeapi.co/api/v2/pokemon/" + args[0]
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", args[0])
+
+	var pokemon utils.PokemonFull
+
+	err := utils.GetPokemon(url, cache, &pokemon)
+	if err != nil {
+		return err
+	}
+
+	// Create and seed a new Rand instance (recommended for Go 1.20+)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// calculate the catch using modulus
+	caught := r.Intn(pokemon.BaseExperience) % pokemon.BaseExperience
+	// check catch
+	if caught >= 0 && caught < (pokemon.BaseExperience/4)+3 {
+		pokedex[pokemon.Name] = pokemon
+		fmt.Printf("%s was caught!\n", pokemon.Name)
+	} else {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandInspect(cfg *Config, args ...string) error {
 
 	return nil
 }

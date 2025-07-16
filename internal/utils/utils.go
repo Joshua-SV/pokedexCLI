@@ -21,6 +21,7 @@ type Area struct {
 	URL  string `json:"url"`
 }
 
+// structs for getting the pokemons found with explore command
 type LocationSearched struct {
 	Name           string      `json:"name"`
 	ID             int         `json:"id"`
@@ -34,6 +35,17 @@ type Encounter struct {
 type Pokemon struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+}
+
+// structs for catching and details of a specific pokemon
+type PokemonFull struct {
+	Name           string `json:"name"`
+	ID             int    `json:"id"`
+	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"` // height of this Pokémon in decimetres
+	Weight         int    `json:"weight"` // weight of this Pokémon in hectograms
+	Order          int    `json:"order"`  // used to sort the pokemon
+
 }
 
 func GetMapPokeAPI(url string, cache *pokeCache.Cache, locations *LocationResponse) error {
@@ -59,6 +71,21 @@ func GetPokemonsOfLocation(url string, cache *pokeCache.Cache, search *LocationS
 
 	// parse the json into the locations struct
 	err = json.Unmarshal(body, &search)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetPokemon(url string, cache *pokeCache.Cache, pokemon *PokemonFull) error {
+	body, err := GetBody(url, cache)
+	if err != nil {
+		return err
+	}
+
+	// parse the json into the locations struct
+	err = json.Unmarshal(body, &pokemon)
 	if err != nil {
 		return err
 	}
