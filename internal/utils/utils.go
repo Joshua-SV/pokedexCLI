@@ -10,10 +10,10 @@ import (
 
 // struct for api decoding
 type LocationResponse struct {
+	Results  []Area  `json:"results"`
+	Count    int     `json:"count"`
 	Next     *string `json:"next"`
 	Previous *string `json:"previous"`
-	Count    int     `json:"count"`
-	Results  []Area  `json:"results"`
 }
 
 type Area struct {
@@ -23,9 +23,9 @@ type Area struct {
 
 // structs for getting the pokemons found with explore command
 type LocationSearched struct {
+	Pokemons_found []Encounter `json:"pokemon_encounters"`
 	Name           string      `json:"name"`
 	ID             int         `json:"id"`
-	Pokemons_found []Encounter `json:"pokemon_encounters"`
 }
 
 type Encounter struct {
@@ -37,15 +37,43 @@ type Pokemon struct {
 	URL  string `json:"url"`
 }
 
-// structs for catching and details of a specific pokemon
+// structs for details of a specific pokemon
 type PokemonFull struct {
-	Name           string `json:"name"`
-	ID             int    `json:"id"`
-	BaseExperience int    `json:"base_experience"`
-	Height         int    `json:"height"` // height of this Pokémon in decimetres
-	Weight         int    `json:"weight"` // weight of this Pokémon in hectograms
-	Order          int    `json:"order"`  // used to sort the pokemon
+	Stats          []Stat    `json:"stats"`
+	Moves          []Move    `json:"moves"`
+	Abilities      []Ability `json:"abilities"`
+	Types          []Type    `json:"types"`
+	Name           string    `json:"name"`
+	ID             int       `json:"id"`
+	BaseExperience int       `json:"base_experience"`
+	Height         int       `json:"height"` // height of this Pokémon in decimetres
+	Weight         int       `json:"weight"` // weight of this Pokémon in hectograms
+	Order          int       `json:"order"`  // used to sort the pokemon
+}
 
+type Ability struct {
+	AbilityType struct {
+		Name string `json:"name"`
+	} `json:"ability"`
+}
+
+type Move struct {
+	MoveType struct {
+		Name string `json:"name"`
+	} `json:"move"`
+}
+
+type Type struct {
+	TypeType struct {
+		Name string `json:"name"`
+	} `json:"type"`
+}
+
+type Stat struct {
+	StatType struct {
+		Name string `json:"name"`
+	} `json:"stat"`
+	BaseStat int `json:"base_stat"`
 }
 
 func GetMapPokeAPI(url string, cache *pokeCache.Cache, locations *LocationResponse) error {

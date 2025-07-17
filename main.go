@@ -75,6 +75,16 @@ func init() {
 			description: "Catching Pokemon adds them to the user's Pokedex",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect Pokemon that you have captured",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "See the Pokemons you have captured in your pokedex and the quantity",
+			callback:    CommandPokedex,
+		},
 	}
 	// initialize an empty pokedex
 	pokedex = make(map[string]utils.PokemonFull)
@@ -182,7 +192,7 @@ func commandMapBack(cfg *Config, args ...string) error {
 
 func commandExplore(cfg *Config, args ...string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("did not pass Location to explore: %v\n", args)
+		return fmt.Errorf("did not pass Location to explore: %v", args)
 	}
 
 	fmt.Printf("Exploring ...%s\n", args[0])
@@ -194,7 +204,7 @@ func commandExplore(cfg *Config, args ...string) error {
 
 	err := utils.GetPokemonsOfLocation(url, cache, &searched)
 	if err != nil {
-		return fmt.Errorf("invalid location name: %v\n", err)
+		return fmt.Errorf("invalid location name: %v", err)
 	}
 
 	fmt.Println("Pokemons Found")
@@ -208,7 +218,7 @@ func commandExplore(cfg *Config, args ...string) error {
 
 func commandCatch(cfg *Config, args ...string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("did not pass pokemon to catch: %v\n", args)
+		return fmt.Errorf("did not pass pokemon to catch: %v", args)
 	}
 
 	url := "https://pokeapi.co/api/v2/pokemon/" + args[0]
@@ -225,11 +235,12 @@ func commandCatch(cfg *Config, args ...string) error {
 	// Create and seed a new Rand instance (recommended for Go 1.20+)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// calculate the catch using modulus
-	caught := r.Intn(pokemon.BaseExperience) % pokemon.BaseExperience
+	caught := r.Intn(pokemon.BaseExperience)
 	// check catch
 	if caught >= 0 && caught < (pokemon.BaseExperience/4)+3 {
 		pokedex[pokemon.Name] = pokemon
 		fmt.Printf("%s was caught!\n", pokemon.Name)
+		fmt.Println("You can now inspect it! Use the inspect command")
 	} else {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
 	}
@@ -238,6 +249,50 @@ func commandCatch(cfg *Config, args ...string) error {
 }
 
 func commandInspect(cfg *Config, args ...string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("did not pass pokemon to inspect: %v", args)
+	}
+
+	pokemon, ok := pokedex[args[0]]
+	if !ok {
+		fmt.Printf("you have not caught pokemon: %v\n", args[0])
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, val := range pokemon.Stats {
+		fmt.Printf("   - %s: %d\n", val.StatType.Name, val.BaseStat)
+	}
+	fmt.Println("Type:")
+	for _, val := range pokemon.Types {
+		fmt.Printf("   - %s\n", val.TypeType.Name)
+	}
+	fmt.Println("Abilities:")
+	for _, val := range pokemon.Abilities {
+		fmt.Printf("   - %s\n", val.AbilityType.Name)
+	}
+	fmt.Println("Moves:")
+	for _, val := range pokemon.Moves {
+		fmt.Printf("   - %s\n", val.MoveType.Name)
+	}
+
+	return nil
+}
+
+func CommandPokedex(cfg *Config, args ...string) error {
+	if len(pokedex) == 0 {
+		fmt.Printf("You have %d captured pokemon :(\n", len(pokedex))
+		return nil
+	}
+
+	fmt.Println("Your Pokedex:")
+	fmt.Printf("Pokemon Count: %d\n", len(pokedex))
+	for name := range pokedex {
+		fmt.Printf("   - %s\n", name)
+	}
 
 	return nil
 }
